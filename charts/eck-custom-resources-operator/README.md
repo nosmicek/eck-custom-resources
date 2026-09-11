@@ -54,7 +54,7 @@ helm uninstall eck-cr
 | elasticsearch.url | string | `"https://quickstart-es-http:9200"` | Url of Elasticsearch |
 | fullnameOverride | string | `""` | Fully qualified app name |
 | image.pullPolicy | string | `"IfNotPresent"` | Pull policy for docker image |
-| image.repository | string | `"xcosk/eck-custom-resources"` | ECK Custom resources docker image registry |
+| image.repository | string | `"nosmo/eck-custom-resources"` | ECK Custom resources docker image registry |
 | image.tag | string | `""` | Docker image tag. Overrides the image tag whose default is the chart appVersion. |
 | imagePullSecrets | list | `[]` | Docker image pull secrets |
 | kibana | object | `{}` | Configuration of Default Kibana to which the Custom resources are deployed. Can stay empty if you want to only use the KibanaInstance CRD approach |
