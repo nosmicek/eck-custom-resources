@@ -7,7 +7,7 @@ replicaCount: 1
 
 image:
   # -- ECK Custom resources docker image registry
-  repository: nosmo/eck-custom-resources
+  repository: xcosk/eck-custom-resources
   # -- Pull policy for docker image
   pullPolicy: IfNotPresent
   # -- Docker image tag. Overrides the image tag whose default is the chart appVersion.
