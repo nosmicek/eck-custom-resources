@@ -10,10 +10,7 @@ import (
 
 func DeleteSnapshotRepository(esClient *elasticsearch.Client, repositoryName string) (ctrl.Result, error) {
 	res, err := esClient.Snapshot.DeleteRepository([]string{repositoryName})
-	if err != nil || res.IsError() {
-		return utils.GetRequeueResult(), err
-	}
-	return ctrl.Result{}, nil
+	return HandleDeleteResponse(err, res)
 }
 
 func UpsertSnapshotRepository(esClient *elasticsearch.Client, snapshotRepository v1alpha1.SnapshotRepository) (ctrl.Result, error) {

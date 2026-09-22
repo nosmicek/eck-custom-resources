@@ -18,8 +18,8 @@ import (
 
 func DeleteApikey(cli client.Client, ctx context.Context, esClient *elasticsearch.Client, apikey v1alpha1.ElasticsearchApikey, req ctrl.Request) (ctrl.Result, error) {
 	res, err := esClient.Security.InvalidateAPIKey(strings.NewReader(apikey.Spec.Body))
-	if err != nil || res.IsError() {
-		return utils.GetRequeueResult(), err
+	if result, invalidateErr := HandleDeleteResponse(err, res); invalidateErr != nil {
+		return result, invalidateErr
 	}
 
 	if err := DeleteApikeySecret(cli, ctx, req.Namespace, req.Name); err != nil {

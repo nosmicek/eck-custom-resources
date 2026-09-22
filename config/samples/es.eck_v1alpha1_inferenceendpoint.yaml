@@ -1,0 +1,16 @@
+apiVersion: es.eck.github.com/v1alpha1
+kind: InferenceEndpoint
+metadata:
+  name: inferenceendpoint-sample
+spec:
+  targetInstance:
+    name: elasticsearch-quickstart
+  taskType: sparse_embedding
+  body: |
+    {
+      "service": "elser",
+      "service_settings": {
+        "num_allocations": 1,
+        "num_threads": 1
+      }
+    }

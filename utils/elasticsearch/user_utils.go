@@ -15,10 +15,7 @@ import (
 
 func DeleteUser(esClient *elasticsearch.Client, userName string) (ctrl.Result, error) {
 	res, err := esClient.Security.DeleteUser(userName)
-	if err != nil || res.IsError() {
-		return utils.GetRequeueResult(), err
-	}
-	return ctrl.Result{}, nil
+	return HandleDeleteResponse(err, res)
 }
 
 func UpsertUser(esClient *elasticsearch.Client, cli client.Client, ctx context.Context, user v1alpha1.ElasticsearchUser) (ctrl.Result, error) {

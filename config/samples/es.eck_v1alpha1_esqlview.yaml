@@ -1,0 +1,11 @@
+apiVersion: es.eck.github.com/v1alpha1
+kind: EsqlView
+metadata:
+  name: esqlview-sample
+spec:
+  targetInstance:
+    name: elasticsearch-quickstart
+  body: |
+    {
+      "query": "FROM index-sample | STATS count() BY category"
+    }

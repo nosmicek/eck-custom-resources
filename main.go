@@ -245,6 +245,69 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ComponentTemplate")
 		os.Exit(1)
 	}
+	if err = (&eseckcontrollers.InferenceEndpointReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		ProjectConfig: ctrlConfig,
+		Recorder:      mgr.GetEventRecorderFor("inferenceendpoint_controller"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "InferenceEndpoint")
+		os.Exit(1)
+	}
+	if err = (&eseckcontrollers.SynonymsSetReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		ProjectConfig: ctrlConfig,
+		Recorder:      mgr.GetEventRecorderFor("synonymsset_controller"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SynonymsSet")
+		os.Exit(1)
+	}
+	if err = (&eseckcontrollers.QueryRulesetReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		ProjectConfig: ctrlConfig,
+		Recorder:      mgr.GetEventRecorderFor("queryruleset_controller"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "QueryRuleset")
+		os.Exit(1)
+	}
+	if err = (&eseckcontrollers.SearchApplicationReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		ProjectConfig: ctrlConfig,
+		Recorder:      mgr.GetEventRecorderFor("searchapplication_controller"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SearchApplication")
+		os.Exit(1)
+	}
+	if err = (&eseckcontrollers.EsqlViewReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		ProjectConfig: ctrlConfig,
+		Recorder:      mgr.GetEventRecorderFor("esqlview_controller"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "EsqlView")
+		os.Exit(1)
+	}
+	if err = (&eseckcontrollers.EsqlDatasetReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		ProjectConfig: ctrlConfig,
+		Recorder:      mgr.GetEventRecorderFor("esqldataset_controller"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "EsqlDataset")
+		os.Exit(1)
+	}
+	if err = (&eseckcontrollers.EsqlDataSourceReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		ProjectConfig: ctrlConfig,
+		Recorder:      mgr.GetEventRecorderFor("esqldatasource_controller"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "EsqlDataSource")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

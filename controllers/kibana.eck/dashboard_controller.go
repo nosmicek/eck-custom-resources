@@ -18,11 +18,13 @@ package kibanaeck
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	configv2 "github.com/xco-sk/eck-custom-resources/apis/config/v2"
 	"github.com/xco-sk/eck-custom-resources/utils"
 	kibanaUtils "github.com/xco-sk/eck-custom-resources/utils/kibana"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -56,12 +58,27 @@ func (r *DashboardReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	isDeleted := !dashboard.ObjectMeta.DeletionTimestamp.IsZero()
+
+	if isDeleted && utils.SkipRemoteDelete(&dashboard) {
+		logger.Info("Skipping remote deletion, releasing finalizer.", "Resource", req.NamespacedName)
+		return utils.ReleaseFinalizer(ctx, r.Client, &dashboard, dashboardFinalizer)
+	}
+
 	targetInstance, err := r.getTargetInstance(&dashboard, dashboard.Spec.TargetConfig, ctx, req.Namespace)
 	if err != nil {
+		if isDeleted && apierrors.IsNotFound(err) {
+			logger.Info("Target instance not found, releasing finalizer without remote deletion.", "Resource", req.NamespacedName)
+			return utils.ReleaseFinalizer(ctx, r.Client, &dashboard, dashboardFinalizer)
+		}
 		return utils.GetRequeueResult(), err
 	}
 
 	if !targetInstance.Enabled {
+		if isDeleted {
+			logger.Info("Reconciler disabled, releasing finalizer without remote deletion.", "Resource", req.NamespacedName)
+			return utils.ReleaseFinalizer(ctx, r.Client, &dashboard, dashboardFinalizer)
+		}
 		logger.Info("Kibana reconciler disabled, not reconciling.", "Resource", req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
@@ -104,7 +121,10 @@ func (r *DashboardReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		// The object is being deleted
 		if controllerutil.ContainsFinalizer(&dashboard, dashboardFinalizer) {
 			if _, err := kibanaUtils.DeleteSavedObject(kibanaClient, savedObjectType, dashboard.ObjectMeta, dashboard.Spec.GetSavedObject()); err != nil {
-				return ctrl.Result{}, err
+				if !errors.Is(err, utils.ErrSecretNotFound) {
+					return ctrl.Result{}, err
+				}
+				logger.Info("Referenced secret not found, releasing finalizer without remote deletion.", "Resource", req.NamespacedName, "Reason", err.Error())
 			}
 
 			controllerutil.RemoveFinalizer(&dashboard, dashboardFinalizer)

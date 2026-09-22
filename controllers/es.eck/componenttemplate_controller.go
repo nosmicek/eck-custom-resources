@@ -18,8 +18,10 @@ package eseck
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -54,17 +56,36 @@ func (r *ComponentTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	if err := r.Get(ctx, req.NamespacedName, &comTem); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	isDeleted := !comTem.ObjectMeta.DeletionTimestamp.IsZero()
+
+	if isDeleted && utils.SkipRemoteDelete(&comTem) {
+		logger.Info("Skipping remote deletion, releasing finalizer.", "Resource", req.NamespacedName)
+		return utils.ReleaseFinalizer(ctx, r.Client, &comTem, finalizer)
+	}
+
 	targetInstance, err := r.getTargetInstance(&comTem, comTem.Spec.TargetConfig, ctx, req.Namespace)
 	if err != nil {
+		if isDeleted && apierrors.IsNotFound(err) {
+			logger.Info("Target instance not found, releasing finalizer without remote deletion.", "Resource", req.NamespacedName)
+			return utils.ReleaseFinalizer(ctx, r.Client, &comTem, finalizer)
+		}
 		return utils.GetRequeueResult(), err
 	}
 	if !targetInstance.Enabled {
+		if isDeleted {
+			logger.Info("Reconciler disabled, releasing finalizer without remote deletion.", "Resource", req.NamespacedName)
+			return utils.ReleaseFinalizer(ctx, r.Client, &comTem, finalizer)
+		}
 		logger.Info("Elasticsearch reconciler disabled, not reconciling.", "Resource", req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
 
 	esClient, createClientErr := esutils.GetElasticsearchClient(r.Client, ctx, *targetInstance, req)
 	if createClientErr != nil {
+		if isDeleted && errors.Is(createClientErr, utils.ErrSecretNotFound) {
+			logger.Info("Referenced secret not found, releasing finalizer without remote deletion.", "Resource", req.NamespacedName, "Reason", createClientErr.Error())
+			return utils.ReleaseFinalizer(ctx, r.Client, &comTem, finalizer)
+		}
 		logger.Error(createClientErr, "Failed to create Elasticsearch client")
 		return utils.GetRequeueResult(), client.IgnoreNotFound(createClientErr)
 	}

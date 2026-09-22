@@ -18,6 +18,7 @@ package eseck
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	configv2 "github.com/xco-sk/eck-custom-resources/apis/config/v2"
@@ -25,6 +26,7 @@ import (
 	esutils "github.com/xco-sk/eck-custom-resources/utils/elasticsearch"
 	"k8s.io/client-go/tools/record"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,18 +58,37 @@ func (r *SnapshotRepositoryReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	isDeleted := !snapshotRepository.ObjectMeta.DeletionTimestamp.IsZero()
+
+	if isDeleted && utils.SkipRemoteDelete(&snapshotRepository) {
+		logger.Info("Skipping remote deletion, releasing finalizer.", "Resource", req.NamespacedName)
+		return utils.ReleaseFinalizer(ctx, r.Client, &snapshotRepository, finalizer)
+	}
+
 	targetInstance, err := r.getTargetInstance(&snapshotRepository, snapshotRepository.Spec.TargetConfig, ctx, req.Namespace)
 	if err != nil {
+		if isDeleted && apierrors.IsNotFound(err) {
+			logger.Info("Target instance not found, releasing finalizer without remote deletion.", "Resource", req.NamespacedName)
+			return utils.ReleaseFinalizer(ctx, r.Client, &snapshotRepository, finalizer)
+		}
 		return utils.GetRequeueResult(), err
 	}
 
 	if !targetInstance.Enabled {
+		if isDeleted {
+			logger.Info("Reconciler disabled, releasing finalizer without remote deletion.", "Resource", req.NamespacedName)
+			return utils.ReleaseFinalizer(ctx, r.Client, &snapshotRepository, finalizer)
+		}
 		logger.Info("Elasticsearch reconciler disabled, not reconciling.", "Resource", req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
 
 	esClient, createClientErr := esutils.GetElasticsearchClient(r.Client, ctx, *targetInstance, req)
 	if createClientErr != nil {
+		if isDeleted && errors.Is(createClientErr, utils.ErrSecretNotFound) {
+			logger.Info("Referenced secret not found, releasing finalizer without remote deletion.", "Resource", req.NamespacedName, "Reason", createClientErr.Error())
+			return utils.ReleaseFinalizer(ctx, r.Client, &snapshotRepository, finalizer)
+		}
 		logger.Error(createClientErr, "Failed to create Elasticsearch client")
 		return utils.GetRequeueResult(), client.IgnoreNotFound(createClientErr)
 	}

@@ -179,4 +179,67 @@ resources:
   kind: ComponentTemplate
   path: github.com/xco-sk/eck-custom-resources/apis/es.eck/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: github.com
+  group: es.eck
+  kind: InferenceEndpoint
+  path: github.com/xco-sk/eck-custom-resources/apis/es.eck/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: github.com
+  group: es.eck
+  kind: SynonymsSet
+  path: github.com/xco-sk/eck-custom-resources/apis/es.eck/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: github.com
+  group: es.eck
+  kind: QueryRuleset
+  path: github.com/xco-sk/eck-custom-resources/apis/es.eck/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: github.com
+  group: es.eck
+  kind: SearchApplication
+  path: github.com/xco-sk/eck-custom-resources/apis/es.eck/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: github.com
+  group: es.eck
+  kind: EsqlView
+  path: github.com/xco-sk/eck-custom-resources/apis/es.eck/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: github.com
+  group: es.eck
+  kind: EsqlDataset
+  path: github.com/xco-sk/eck-custom-resources/apis/es.eck/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: github.com
+  group: es.eck
+  kind: EsqlDataSource
+  path: github.com/xco-sk/eck-custom-resources/apis/es.eck/v1alpha1
+  version: v1alpha1
 version: "3"

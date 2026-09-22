@@ -1,0 +1,26 @@
+apiVersion: es.eck.github.com/v1alpha1
+kind: QueryRuleset
+metadata:
+  name: queryruleset-sample
+spec:
+  targetInstance:
+    name: elasticsearch-quickstart
+  body: |
+    {
+      "rules": [
+        {
+          "rule_id": "pin-eck",
+          "type": "pinned",
+          "criteria": [
+            {
+              "type": "contains",
+              "metadata": "query_string",
+              "values": ["eck", "operator"]
+            }
+          ],
+          "actions": {
+            "ids": ["doc-1", "doc-2"]
+          }
+        }
+      ]
+    }

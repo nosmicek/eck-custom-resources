@@ -10,10 +10,7 @@ import (
 
 func DeleteRole(esClient *elasticsearch.Client, roleName string) (ctrl.Result, error) {
 	res, err := esClient.Security.DeleteRole(roleName)
-	if err != nil || res.IsError() {
-		return utils.GetRequeueResult(), err
-	}
-	return ctrl.Result{}, nil
+	return HandleDeleteResponse(err, res)
 }
 
 func UpsertRole(esClient *elasticsearch.Client, role v1alpha1.ElasticsearchRole) (ctrl.Result, error) {

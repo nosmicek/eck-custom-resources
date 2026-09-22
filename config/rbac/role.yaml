@@ -23,12 +23,19 @@ rules:
   - elasticsearchapikeys
   - elasticsearchroles
   - elasticsearchusers
+  - esqldatasets
+  - esqldatasources
+  - esqlviews
   - indexlifecyclepolicies
   - indextemplates
   - indices
+  - inferenceendpoints
   - ingestpipelines
+  - queryrulesets
+  - searchapplications
   - snapshotlifecyclepolicies
   - snapshotrepositories
+  - synonymssets
   verbs:
   - create
   - delete
@@ -44,12 +51,19 @@ rules:
   - elasticsearchapikeys/finalizers
   - elasticsearchroles/finalizers
   - elasticsearchusers/finalizers
+  - esqldatasets/finalizers
+  - esqldatasources/finalizers
+  - esqlviews/finalizers
   - indexlifecyclepolicies/finalizers
   - indextemplates/finalizers
   - indices/finalizers
+  - inferenceendpoints/finalizers
   - ingestpipelines/finalizers
+  - queryrulesets/finalizers
+  - searchapplications/finalizers
   - snapshotlifecyclepolicies/finalizers
   - snapshotrepositories/finalizers
+  - synonymssets/finalizers
   verbs:
   - update
 - apiGroups:
@@ -59,12 +73,19 @@ rules:
   - elasticsearchapikeys/status
   - elasticsearchroles/status
   - elasticsearchusers/status
+  - esqldatasets/status
+  - esqldatasources/status
+  - esqlviews/status
   - indexlifecyclepolicies/status
   - indextemplates/status
   - indices/status
+  - inferenceendpoints/status
   - ingestpipelines/status
+  - queryrulesets/status
+  - searchapplications/status
   - snapshotlifecyclepolicies/status
   - snapshotrepositories/status
+  - synonymssets/status
   verbs:
   - get
   - patch

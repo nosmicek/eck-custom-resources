@@ -16,8 +16,7 @@ const OVERRIDE = true
 const REFRESH_FIELDS = true
 
 func DeleteDataView(kClient Client, dataView kibanaeckv1alpha1.DataView) (ctrl.Result, error) {
-	_, deleteErr := kClient.DoDelete(formatExistingDataViewUrl(dataView.Name, dataView.Spec.Space))
-	return ctrl.Result{}, deleteErr
+	return HandleDeleteResponse(kClient.DoDelete(formatExistingDataViewUrl(dataView.Name, dataView.Spec.Space)))
 }
 
 func UpsertDataView(kClient Client, dataView kibanaeckv1alpha1.DataView) (ctrl.Result, error) {

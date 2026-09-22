@@ -12,8 +12,7 @@ import (
 )
 
 func DeleteSavedObject(kClient Client, savedObjectType string, savedObjectMeta metav1.ObjectMeta, savedObject kibanaeckv1alpha1.SavedObject) (ctrl.Result, error) {
-	_, deleteErr := kClient.DoDelete(formatSavedObjectUrl(savedObjectType, savedObjectMeta.Name, savedObject.Space))
-	return ctrl.Result{}, deleteErr
+	return HandleDeleteResponse(kClient.DoDelete(formatSavedObjectUrl(savedObjectType, savedObjectMeta.Name, savedObject.Space)))
 }
 
 func UpsertSavedObject(kClient Client, savedObjectType string, savedObjectMeta metav1.ObjectMeta, savedObject kibanaeckv1alpha1.SavedObject) (ctrl.Result, error) {

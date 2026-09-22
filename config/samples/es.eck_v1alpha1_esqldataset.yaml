@@ -1,0 +1,16 @@
+apiVersion: es.eck.github.com/v1alpha1
+kind: EsqlDataset
+metadata:
+  name: esqldataset-sample
+spec:
+  targetInstance:
+    name: elasticsearch-quickstart
+  body: |
+    {
+      "data_source": "esqldatasource-sample",
+      "resource": "s3://logs-bucket/access/**/*.parquet",
+      "description": "ES|QL dataset sample",
+      "settings": {
+        "partition_detection": "hive"
+      }
+    }

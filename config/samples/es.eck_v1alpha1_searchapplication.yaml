@@ -1,0 +1,28 @@
+apiVersion: es.eck.github.com/v1alpha1
+kind: SearchApplication
+metadata:
+  name: searchapplication-sample
+spec:
+  targetInstance:
+    name: elasticsearch-quickstart
+  dependencies:
+    indices:
+      - index-sample
+  body: |
+    {
+      "indices": ["index-sample"],
+      "template": {
+        "script": {
+          "source": {
+            "query": {
+              "query_string": {
+                "query": "{{query_string}}"
+              }
+            }
+          },
+          "params": {
+            "query_string": "*"
+          }
+        }
+      }
+    }

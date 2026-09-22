@@ -18,6 +18,7 @@ package kibanaeck
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	configv2 "github.com/xco-sk/eck-custom-resources/apis/config/v2"
@@ -26,6 +27,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,12 +58,27 @@ func (r *SpaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	isDeleted := !space.ObjectMeta.DeletionTimestamp.IsZero()
+
+	if isDeleted && utils.SkipRemoteDelete(&space) {
+		logger.Info("Skipping remote deletion, releasing finalizer.", "Resource", req.NamespacedName)
+		return utils.ReleaseFinalizer(ctx, r.Client, &space, spaceFinalizer)
+	}
+
 	targetInstance, err := r.getTargetInstance(&space, space.Spec.TargetConfig, ctx, req.Namespace)
 	if err != nil {
+		if isDeleted && apierrors.IsNotFound(err) {
+			logger.Info("Target instance not found, releasing finalizer without remote deletion.", "Resource", req.NamespacedName)
+			return utils.ReleaseFinalizer(ctx, r.Client, &space, spaceFinalizer)
+		}
 		return utils.GetRequeueResult(), err
 	}
 
 	if !targetInstance.Enabled {
+		if isDeleted {
+			logger.Info("Reconciler disabled, releasing finalizer without remote deletion.", "Resource", req.NamespacedName)
+			return utils.ReleaseFinalizer(ctx, r.Client, &space, spaceFinalizer)
+		}
 		logger.Info("Kibana reconciler disabled, not reconciling.", "Resource", req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
@@ -97,7 +114,10 @@ func (r *SpaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		// The object is being deleted
 		if controllerutil.ContainsFinalizer(&space, spaceFinalizer) {
 			if _, err := kibanaUtils.DeleteSpace(kibanaClient, space.Name); err != nil {
-				return ctrl.Result{}, err
+				if !errors.Is(err, utils.ErrSecretNotFound) {
+					return ctrl.Result{}, err
+				}
+				logger.Info("Referenced secret not found, releasing finalizer without remote deletion.", "Resource", req.NamespacedName, "Reason", err.Error())
 			}
 
 			controllerutil.RemoveFinalizer(&space, spaceFinalizer)

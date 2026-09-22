@@ -18,6 +18,7 @@ package kibanaeck
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	configv2 "github.com/xco-sk/eck-custom-resources/apis/config/v2"
@@ -26,6 +27,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,12 +59,27 @@ func (r *VisualizationReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	isDeleted := !visualization.ObjectMeta.DeletionTimestamp.IsZero()
+
+	if isDeleted && utils.SkipRemoteDelete(&visualization) {
+		logger.Info("Skipping remote deletion, releasing finalizer.", "Resource", req.NamespacedName)
+		return utils.ReleaseFinalizer(ctx, r.Client, &visualization, visualizationFinalizer)
+	}
+
 	targetInstance, err := r.getTargetInstance(&visualization, visualization.Spec.TargetConfig, ctx, req.Namespace)
 	if err != nil {
+		if isDeleted && apierrors.IsNotFound(err) {
+			logger.Info("Target instance not found, releasing finalizer without remote deletion.", "Resource", req.NamespacedName)
+			return utils.ReleaseFinalizer(ctx, r.Client, &visualization, visualizationFinalizer)
+		}
 		return utils.GetRequeueResult(), err
 	}
 
 	if !targetInstance.Enabled {
+		if isDeleted {
+			logger.Info("Reconciler disabled, releasing finalizer without remote deletion.", "Resource", req.NamespacedName)
+			return utils.ReleaseFinalizer(ctx, r.Client, &visualization, visualizationFinalizer)
+		}
 		logger.Info("Kibana reconciler disabled, not reconciling.", "Resource", req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
@@ -104,7 +121,10 @@ func (r *VisualizationReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		// The object is being deleted
 		if controllerutil.ContainsFinalizer(&visualization, visualizationFinalizer) {
 			if _, err := kibanaUtils.DeleteSavedObject(kibanaClient, savedObjectType, visualization.ObjectMeta, visualization.Spec.GetSavedObject()); err != nil {
-				return ctrl.Result{}, err
+				if !errors.Is(err, utils.ErrSecretNotFound) {
+					return ctrl.Result{}, err
+				}
+				logger.Info("Referenced secret not found, releasing finalizer without remote deletion.", "Resource", req.NamespacedName, "Reason", err.Error())
 			}
 
 			controllerutil.RemoveFinalizer(&visualization, visualizationFinalizer)
