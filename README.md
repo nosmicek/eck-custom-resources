@@ -18,6 +18,13 @@ Currently supported resources:
   - [Role](docs/cr_role.md)
   - [API key](docs/cr_apikey.md)
   - [Component template](docs/cr_component_template.md)
+  - [Inference endpoint](docs/cr_inference_endpoint.md)
+  - [Synonyms set](docs/cr_synonyms_set.md)
+  - [Query ruleset](docs/cr_query_ruleset.md)
+  - [Search application](docs/cr_search_application.md)
+  - [ES|QL view](docs/cr_esql_view.md)
+  - [ES|QL dataset](docs/cr_esql_dataset.md)
+  - [ES|QL data source](docs/cr_esql_data_source.md)
 - For Kibana:
   - [Kibana Instance](docs/cr_kibana_instance.md)
   - [Space](docs/cr_space.md)
@@ -39,7 +46,57 @@ helm install eck-cr eck-custom-resources/eck-custom-resources-operator
 ```
 Configuration options are documented in [chart README file](charts/eck-custom-resources-operator/README.md)
 
+## Resource deletion
+
+Every managed resource carries a finalizer, so deleting the Kubernetes object also
+deletes its counterpart in Elasticsearch or Kibana. If that call fails the object
+stays in `Terminating` and is retried, rather than disappearing and leaving the
+remote object behind.
+
+Because a blocked finalizer also blocks deletion of the namespace holding it, the
+operator releases the finalizer without attempting remote deletion when the call
+could never succeed:
+
+- the target `ElasticsearchInstance` / `KibanaInstance` no longer exists
+- the referenced authentication or certificate secret no longer exists
+- the target instance has `enabled: false`
+
+A resource that is already absent from Elasticsearch or Kibana (HTTP 404) counts as
+deleted, so re-deleting never wedges.
+
+To keep a resource in Elasticsearch or Kibana while removing the Kubernetes object,
+annotate it:
+
+```yaml
+metadata:
+  annotations:
+    eck.github.com/skip-remote-delete: "true"
+```
+
+Anything else - a cluster that is unreachable, credentials without delete
+permission, a resource still referenced by another - keeps the object in
+`Terminating` until it is resolved. To force it through, remove the finalizer:
+
+```shell
+kubectl patch <kind> <name> --type=merge -p '{"metadata":{"finalizers":[]}}'
+```
+
 ## Upgrade guide
+
+### From 0.8.0 to 0.9.0
+Seven new CRDs for Elasticsearch 9.x resources were introduced. To apply them, run:
+```
+kubectl apply --server-side \
+  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_inferenceendpoints.yaml \
+  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_synonymssets.yaml \
+  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_queryrulesets.yaml \
+  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_searchapplications.yaml \
+  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_esqlviews.yaml \
+  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_esqldatasets.yaml \
+  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_esqldatasources.yaml
+```
+The ES|QL view, dataset and data source resources require Elasticsearch 9.2 or
+newer; the remaining resources work on any Elasticsearch 9.x.
 
 ### From 0.7.0 to 0.7.1
 Existing `ComponentTemplate` CRD was fixed. To apply the CRD, run:

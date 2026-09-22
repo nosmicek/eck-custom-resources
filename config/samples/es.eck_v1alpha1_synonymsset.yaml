@@ -1,0 +1,20 @@
+apiVersion: es.eck.github.com/v1alpha1
+kind: SynonymsSet
+metadata:
+  name: synonymsset-sample
+spec:
+  targetInstance:
+    name: elasticsearch-quickstart
+  body: |
+    {
+      "synonyms_set": [
+        {
+          "id": "rule-1",
+          "synonyms": "hello, hi, howdy"
+        },
+        {
+          "id": "rule-2",
+          "synonyms": "goodbye, bye, farewell"
+        }
+      ]
+    }

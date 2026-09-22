@@ -18,6 +18,7 @@ package kibanaeck
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	configv2 "github.com/xco-sk/eck-custom-resources/apis/config/v2"
@@ -26,6 +27,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,12 +59,27 @@ func (r *SavedSearchReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	isDeleted := !savedSearch.ObjectMeta.DeletionTimestamp.IsZero()
+
+	if isDeleted && utils.SkipRemoteDelete(&savedSearch) {
+		logger.Info("Skipping remote deletion, releasing finalizer.", "Resource", req.NamespacedName)
+		return utils.ReleaseFinalizer(ctx, r.Client, &savedSearch, savedSearchFinalizer)
+	}
+
 	targetInstance, err := r.getTargetInstance(&savedSearch, savedSearch.Spec.TargetConfig, ctx, req.Namespace)
 	if err != nil {
+		if isDeleted && apierrors.IsNotFound(err) {
+			logger.Info("Target instance not found, releasing finalizer without remote deletion.", "Resource", req.NamespacedName)
+			return utils.ReleaseFinalizer(ctx, r.Client, &savedSearch, savedSearchFinalizer)
+		}
 		return utils.GetRequeueResult(), err
 	}
 
 	if !targetInstance.Enabled {
+		if isDeleted {
+			logger.Info("Reconciler disabled, releasing finalizer without remote deletion.", "Resource", req.NamespacedName)
+			return utils.ReleaseFinalizer(ctx, r.Client, &savedSearch, savedSearchFinalizer)
+		}
 		logger.Info("Kibana reconciler disabled, not reconciling.", "Resource", req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
@@ -104,7 +121,10 @@ func (r *SavedSearchReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		// The object is being deleted
 		if controllerutil.ContainsFinalizer(&savedSearch, savedSearchFinalizer) {
 			if _, err := kibanaUtils.DeleteSavedObject(kibanaClient, savedObjectType, savedSearch.ObjectMeta, savedSearch.Spec.GetSavedObject()); err != nil {
-				return ctrl.Result{}, err
+				if !errors.Is(err, utils.ErrSecretNotFound) {
+					return ctrl.Result{}, err
+				}
+				logger.Info("Referenced secret not found, releasing finalizer without remote deletion.", "Resource", req.NamespacedName, "Reason", err.Error())
 			}
 
 			controllerutil.RemoveFinalizer(&savedSearch, savedSearchFinalizer)

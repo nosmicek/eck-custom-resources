@@ -62,6 +62,23 @@ func GetClientErrorOrResponseError(err error, response *esapi.Response) error {
 	return fmt.Errorf("error(status: %d, response: %s)", response.StatusCode, response.String())
 }
 
+// HandleDeleteResponse maps a delete call onto a reconcile result. A 404 counts as
+// success: the resource is already gone, and failing here would keep the finalizer
+// on the object forever.
+func HandleDeleteResponse(err error, response *esapi.Response) (ctrl.Result, error) {
+	if err != nil {
+		return utils.GetRequeueResult(), err
+	}
+	if response.Body != nil {
+		defer response.Body.Close()
+	}
+
+	if response.IsError() && response.StatusCode != 404 {
+		return utils.GetRequeueResult(), GetClientErrorOrResponseError(nil, response)
+	}
+	return ctrl.Result{}, nil
+}
+
 func DependenciesFulfilled(esClient *elasticsearch.Client, dependencies v1alpha1.Dependencies) error {
 
 	var missingIdxTemplates []string

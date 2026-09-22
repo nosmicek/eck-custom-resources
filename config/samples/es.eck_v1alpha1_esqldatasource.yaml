@@ -1,0 +1,15 @@
+apiVersion: es.eck.github.com/v1alpha1
+kind: EsqlDataSource
+metadata:
+  name: esqldatasource-sample
+spec:
+  targetInstance:
+    name: elasticsearch-quickstart
+  body: |
+    {
+      "type": "s3",
+      "description": "ES|QL data source sample",
+      "settings": {
+        "region": "us-east-1"
+      }
+    }

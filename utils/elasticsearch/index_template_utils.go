@@ -11,10 +11,7 @@ import (
 
 func DeleteIndexTemplate(esClient *elasticsearch.Client, indexTemplateName string) (ctrl.Result, error) {
 	res, err := esClient.Indices.DeleteIndexTemplate([]string{indexTemplateName})
-	if err != nil || res.IsError() {
-		return utils.GetRequeueResult(), err
-	}
-	return ctrl.Result{}, nil
+	return HandleDeleteResponse(err, res)
 }
 
 func UpsertIndexTemplate(esClient *elasticsearch.Client, indexTemplate v1alpha1.IndexTemplate) (ctrl.Result, error) {

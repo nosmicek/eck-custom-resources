@@ -89,10 +89,7 @@ func DeleteIndexIfEmpty(esClient *elasticsearch.Client, indexName string) (ctrl.
 
 func DeleteIndex(esClient *elasticsearch.Client, indexName string) (ctrl.Result, error) {
 	res, deleteErr := esClient.Indices.Delete([]string{indexName})
-	if deleteErr != nil || res.IsError() {
-		return utils.GetRequeueResult(), deleteErr
-	}
-	return ctrl.Result{}, nil
+	return HandleDeleteResponse(deleteErr, res)
 }
 
 func CreateIndex(esClient *elasticsearch.Client, index v1alpha1.Index) (ctrl.Result, error) {

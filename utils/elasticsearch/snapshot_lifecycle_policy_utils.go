@@ -10,10 +10,7 @@ import (
 
 func DeleteSnapshotLifecyclePolicy(esClient *elasticsearch.Client, snapshotLifecyclePolicyName string) (ctrl.Result, error) {
 	res, err := esClient.SlmDeleteLifecycle(snapshotLifecyclePolicyName)
-	if err != nil || res.IsError() {
-		return utils.GetRequeueResult(), err
-	}
-	return ctrl.Result{}, nil
+	return HandleDeleteResponse(err, res)
 }
 
 func UpsertSnapshotLifecyclePolicy(esClient *elasticsearch.Client, snapshotLifecyclePolicy v1alpha1.SnapshotLifecyclePolicy) (ctrl.Result, error) {

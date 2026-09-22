@@ -11,10 +11,7 @@ import (
 
 func DeleteComponentTemplate(esClient *elasticsearch.Client, componentTemplateName string) (ctrl.Result, error) {
 	res, err := esClient.Cluster.DeleteComponentTemplate([]string{componentTemplateName})
-	if err != nil || res.IsError() {
-		return utils.GetRequeueResult(), err
-	}
-	return ctrl.Result{}, nil
+	return HandleDeleteResponse(err, res)
 }
 
 func GetComponentTemplateName(componentTemplate *v1alpha1.ComponentTemplate) string {

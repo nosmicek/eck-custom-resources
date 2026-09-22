@@ -12,6 +12,13 @@
 - [Role](cr_role.md)
 - [API key](cr_apikey.md)
 - [Component template](cr_component_template.md)
+- [Inference endpoint](cr_inference_endpoint.md)
+- [Synonyms set](cr_synonyms_set.md)
+- [Query ruleset](cr_query_ruleset.md)
+- [Search application](cr_search_application.md)
+- [ES|QL view](cr_esql_view.md)
+- [ES|QL dataset](cr_esql_dataset.md)
+- [ES|QL data source](cr_esql_data_source.md)
 
 ## Kibana:
 - [Kibana Instance](cr_kibana_instance.md)

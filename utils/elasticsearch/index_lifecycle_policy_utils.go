@@ -10,10 +10,7 @@ import (
 
 func DeleteIndexLifecyclePolicy(esClient *elasticsearch.Client, indexLifecyclePolicyName string) (ctrl.Result, error) {
 	res, err := esClient.ILM.DeleteLifecycle(indexLifecyclePolicyName)
-	if err != nil || res.IsError() {
-		return utils.GetRequeueResult(), err
-	}
-	return ctrl.Result{}, nil
+	return HandleDeleteResponse(err, res)
 }
 
 func UpsertIndexLifecyclePolicy(esClient *elasticsearch.Client, indexLifecyclePolicy v1alpha1.IndexLifecyclePolicy) (ctrl.Result, error) {

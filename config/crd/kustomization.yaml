@@ -21,6 +21,13 @@ resources:
 - bases/es.eck.github.com_elasticsearchinstances.yaml
 - bases/es.eck.github.com_elasticsearchapikeys.yaml
 - bases/es.eck.github.com_componenttemplates.yaml
+- bases/es.eck.github.com_inferenceendpoints.yaml
+- bases/es.eck.github.com_synonymssets.yaml
+- bases/es.eck.github.com_queryrulesets.yaml
+- bases/es.eck.github.com_searchapplications.yaml
+- bases/es.eck.github.com_esqlviews.yaml
+- bases/es.eck.github.com_esqldatasets.yaml
+- bases/es.eck.github.com_esqldatasources.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

@@ -11,8 +11,7 @@ import (
 )
 
 func DeleteSpace(kClient Client, spaceName string) (ctrl.Result, error) {
-	_, deleteErr := kClient.DoDelete(fmt.Sprintf("/api/spaces/space/%s", spaceName))
-	return ctrl.Result{}, deleteErr
+	return HandleDeleteResponse(kClient.DoDelete(fmt.Sprintf("/api/spaces/space/%s", spaceName)))
 }
 
 func UpsertSpace(kClient Client, space kibanaeckv1alpha1.Space) (ctrl.Result, error) {
