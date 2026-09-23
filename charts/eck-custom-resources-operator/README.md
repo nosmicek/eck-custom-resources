@@ -1,26 +1,26 @@
 # Helm chart for eck-custom-resources
 
-![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.8.0](https://img.shields.io/badge/AppVersion-0.8.0-informational?style=flat-square)
+![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.9.0](https://img.shields.io/badge/AppVersion-0.9.0-informational?style=flat-square)
 
 Helm chart for eck-custom-resources operator
 
-**Homepage:** <https://github.com/xco-sk/eck-custom-resources>
+**Homepage:** <https://github.com/nosmicek/eck-custom-resources>
 
 ## Maintainers
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| Marek Hornak | <marek@xco.sk> | <https://github.com/xco-sk> |
+| nosmicek |  | <https://github.com/nosmicek> |
 
 ## Source Code
 
-* <https://github.com/xco-sk/eck-custom-resources>
+* <https://github.com/nosmicek/eck-custom-resources>
 
 ## Installation
 
 ```shell
 # Add eck-custom-resources helm repo
-helm repo add eck-custom-resources https://xco-sk.github.io/eck-custom-resources/
+helm repo add eck-custom-resources https://nosmicek.github.io/eck-custom-resources/
 
 # Install chart
 helm install eck-cr eck-custom-resources/eck-custom-resources-operator

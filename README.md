@@ -1,9 +1,12 @@
 # Custom resources for ECK
-[![docker-publish](https://github.com/xco-sk/eck-custom-resources/actions/workflows/docker-publish.yaml/badge.svg)](https://github.com/xco-sk/eck-custom-resources/actions/workflows/docker-publish.yaml)
-[![helm-publish](https://github.com/xco-sk/eck-custom-resources/actions/workflows/helm-publish.yml/badge.svg)](https://github.com/xco-sk/eck-custom-resources/actions/workflows/helm-publish.yml)
+[![docker-publish](https://github.com/nosmicek/eck-custom-resources/actions/workflows/docker-publish.yaml/badge.svg)](https://github.com/nosmicek/eck-custom-resources/actions/workflows/docker-publish.yaml)
+[![helm-publish](https://github.com/nosmicek/eck-custom-resources/actions/workflows/helm-publish.yml/badge.svg)](https://github.com/nosmicek/eck-custom-resources/actions/workflows/helm-publish.yml)
 
 Kubernetes operator that enables the installation of various resources for
 Elasticsearch and Kibana.
+
+Fork of [xco-sk/eck-custom-resources](https://github.com/xco-sk/eck-custom-resources)
+with Elasticsearch 9.x support. Charts and images are published from this repository.
 
 Currently supported resources: 
 - For Elasticsearch:
@@ -39,7 +42,7 @@ Currently supported resources:
 
 ```shell
 # Add eck-custom-resources helm repo
-helm repo add eck-custom-resources https://xco-sk.github.io/eck-custom-resources/
+helm repo add eck-custom-resources https://nosmicek.github.io/eck-custom-resources/
 
 # Install chart
 helm install eck-cr eck-custom-resources/eck-custom-resources-operator
@@ -83,37 +86,46 @@ kubectl patch <kind> <name> --type=merge -p '{"metadata":{"finalizers":[]}}'
 
 ## Upgrade guide
 
-### From 0.8.0 to 0.9.0
-Seven new CRDs for Elasticsearch 9.x resources were introduced. To apply them, run:
+Helm installs CRDs only on first install and never upgrades them, so apply the
+CRD bundle attached to each release before upgrading the chart. From 0.9.0 on,
+the full set is published as a single `crds.yaml`.
+
+### To 0.9.0
+0.9.0 is the first chart published from this repository. A release installed
+from the original `xco-sk` chart repository has to be pointed at this one first:
+```shell
+helm repo add eck-custom-resources https://nosmicek.github.io/eck-custom-resources/ --force-update
 ```
-kubectl apply --server-side \
-  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_inferenceendpoints.yaml \
-  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_synonymssets.yaml \
-  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_queryrulesets.yaml \
-  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_searchapplications.yaml \
-  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_esqlviews.yaml \
-  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_esqldatasets.yaml \
-  -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.9.0/config/crd/bases/es.eck.github.com_esqldatasources.yaml
+Seven new CRDs for Elasticsearch 9.x resources were introduced. Apply the full
+CRD set, then upgrade the chart:
+```shell
+kubectl apply --server-side --force-conflicts \
+  -f https://github.com/nosmicek/eck-custom-resources/releases/download/v0.9.0/crds.yaml
+helm upgrade eck-cr eck-custom-resources/eck-custom-resources-operator
 ```
+`--force-conflicts` is needed because the existing CRDs are owned by Helm's
+field manager. The operator image moved to `nosmo/eck-custom-resources`; if
+`image.repository` is overridden in your values, update it as well.
+
 The ES|QL view, dataset and data source resources require Elasticsearch 9.2 or
 newer; the remaining resources work on any Elasticsearch 9.x.
 
 ### From 0.7.0 to 0.7.1
 Existing `ComponentTemplate` CRD was fixed. To apply the CRD, run:
 ```
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.7.1/config/crd/bases/es.eck.github.com_componenttemplates.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/v0.7.1/config/crd/bases/es.eck.github.com_componenttemplates.yaml
 ```
 
 ### From 0.6.0 to 0.7.0
 There is a new `ComponentTemplate` CRD present. To apply the CRD, run:
 ```
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.7.0/config/crd/bases/es.eck.github.com_componenttemplates.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/v0.7.0/config/crd/bases/es.eck.github.com_componenttemplates.yaml
 ```
 
 ### From 0.5.0 to 0.6.0
 The Elasticsearch API Key support was introduced. To apply the CRD, run:
 ```
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/v0.6.0/config/crd/bases/es.eck.github.com_elasticsearchapikeys.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/v0.6.0/config/crd/bases/es.eck.github.com_elasticsearchapikeys.yaml
 ```
 
 ### From 0.4.1 to 0.5.0
@@ -121,23 +133,23 @@ The Multi-target support was introduced. This changes is backward compatible, bu
 apply the new CRDs manually:
 ```
 
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_elasticsearchinstances.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_elasticsearchroles.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_elasticsearchusers.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_indexlifecyclepolicies.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_indextemplates.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_indices.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_ingestpipelines.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_snapshotlifecyclepolicies.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_snapshotrepositories.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_kibanainstances.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_dashboards.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_indexpatterns.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_lens.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_savedsearches.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_spaces.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_visualizations.yaml
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_dataviews.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_elasticsearchinstances.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_elasticsearchroles.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_elasticsearchusers.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_indexlifecyclepolicies.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_indextemplates.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_indices.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_ingestpipelines.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_snapshotlifecyclepolicies.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/es.eck.github.com_snapshotrepositories.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_kibanainstances.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_dashboards.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_indexpatterns.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_lens.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_savedsearches.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_spaces.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_visualizations.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.5.0/config/crd/bases/kibana.eck.github.com_dataviews.yaml
 ```
 
 There are 2 new CRDs, `ElasticsearchInstance` and `KibanaInstance` that allows you to deploy the target configuration for
@@ -150,7 +162,7 @@ See [samples](config/samples).
 ### From 0.3.2 to 0.4.1
 There is new `DataView` CRD present. To apply the CRD, run:
 ```
-kubectl apply --server-side -f https://raw.githubusercontent.com/xco-sk/eck-custom-resources/eck-custom-resources-operator-0.4.1/config/crd/bases/kibana.eck.github.com_dataviews.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/nosmicek/eck-custom-resources/eck-custom-resources-operator-0.4.1/config/crd/bases/kibana.eck.github.com_dataviews.yaml
 ```
 
 
@@ -173,7 +185,7 @@ or update. Definition of target Elasticsearch/Kibana is done using [Elasticsearc
 For detailed documentation for each resource, see [List of supported resources](docs/cr_list.md)
 
 ## Help and Troubleshooting
-In case you need help or found a bug, please create an [Issue on Github](https://github.com/xco-sk/eck-custom-resources/issues).
+In case you need help or found a bug, please create an [Issue on Github](https://github.com/nosmicek/eck-custom-resources/issues).
 
 ## License
 Licensed under the Apache License, Version 2.0; see [LICENSE.md](LICENSE.md)

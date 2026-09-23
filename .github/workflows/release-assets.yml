@@ -1,0 +1,28 @@
+name: release-assets
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+jobs:
+  crds:
+    # Chart releases (eck-custom-resources-operator-X.Y.Z) carry the chart package only.
+    if: startsWith(github.event.release.tag_name, 'v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Bundle CRDs
+        run: cat config/crd/bases/*.yaml > crds.yaml
+
+      - name: Upload CRDs to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" crds.yaml --clobber --repo "$GITHUB_REPOSITORY"
